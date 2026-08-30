@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HostInclusion - Terminal & Resource Hub</title>
+  <!-- xterm.js CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/lib/xterm.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/lib/addon-fit.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-web-links@0.11.0/lib/addon-web-links.js"></script>
+  <style>
+    :root {
+      --bg: #0d0f12;
+      --card-bg: #161920;
+      --card-border: #232733;
+      --accent: #f59e0b;
+      --accent-hover: #d97706;
+      --text: #e2e8f0;
+      --text-dim: #94a3b8;
+      --green: #10b981;
+      --red: #ef4444;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, monospace;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+    header {
+      background-color: var(--card-bg);
+      border-bottom: 1px solid var(--card-border);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      z-index: 10;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.5px;
+    }
+    .host-selector {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    select, button {
+      background: #232733;
+      color: var(--text);
+      border: 1px solid #333849;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 0.9rem;
+      outline: none;
+      cursor: pointer;
+    }
+    select:focus, button:focus {
+      border-color: var(--accent);
+    }
+    button.primary {
+      background: var(--accent);
+      color: #000;
+      font-weight: 600;
+      border: none;
+      transition: background 0.15s;
+    }
+    button.primary:hover {
+      background: var(--accent-hover);
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--green);
+    }
+    .badge.offline {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--red);
+    }
+    .badge .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+    #sidebar {
+      width: 320px;
+      background: var(--card-bg);
+      border-right: 1px solid var(--card-border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    .sidebar-header {
+      padding: 14px 16px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-dim);
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .peer-card {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--card-border);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .peer-card:hover {
+      background: #1c202a;
+    }
+    .peer-card.active {
+      background: #232733;
+      border-left: 3px solid var(--accent);
+    }
+    .peer-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+    .peer-meta {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .peer-gpu {
+      margin-top: 6px;
+      font-size: 0.75rem;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+    #terminal-container {
+      flex: 1;
+      background: #090a0f;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    #xterm-target {
+      width: 100%;
+      height: 100%;
+    }
+    .status-bar {
+      position: absolute;
+      bottom: 8px;
+      right: 16px;
+      background: rgba(22, 25, 32, 0.85);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(4px);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      z-index: 5;
+    }
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <span>⚡</span> HostInclusion
+    </div>
+    <div class="host-selector">
+      <span id="current-host-label" style="font-size: 0.9rem; color: var(--text-dim);">Connecting to local host...</span>
+      <button onclick="popoutTerminal()" title="Open in separate popup window">Pop Out Window ↗</button>
+      <button class="primary" onclick="reconnectTerminal()">Reconnect</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="sidebar">
+      <div class="sidebar-header">
+        <span>Tailscale Nodes</span>
+        <button onclick="fetchPeers()" style="padding: 2px 8px; font-size: 0.75rem;">Refresh</button>
+      </div>
+      <div id="peer-list">
+        <!-- Dynamic peer list -->
+      </div>
+    </div>
+
+    <div id="terminal-container">
+      <div id="xterm-target"></div>
+      <div class="status-bar" id="session-status">Connecting...</div>
+    </div>
+  </main>
+
+  <script>
+    let term = null;
+    let fitAddon = null;
+    let ws = null;
+    let currentHost = window.location.hostname;
+    let currentPort = window.location.port || "8765";
+    let activePeerTarget = `${currentHost}:${currentPort}`;
+
+    function initTerminal() {
+      if (term) {
+        term.dispose();
+      }
+
+      term = new Terminal({
+        cursorBlink: true,
+        fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+        fontSize: 14,
+        lineHeight: 1.2,
+        theme: {
+          background: '#090a0f',
+          foreground: '#e2e8f0',
+          cursor: '#f59e0b',
+          selectionBackground: 'rgba(245, 158, 11, 0.3)',
+          black: '#1e222d',
+          red: '#ef4444',
+          green: '#10b981',
+          yellow: '#f59e0b',
+          blue: '#3b82f6',
+          magenta: '#a855f7',
+          cyan: '#06b6d4',
+          white: '#f8fafc',
+          brightBlack: '#475569',
+          brightRed: '#f87171',
+          brightGreen: '#34d399',
+          brightYellow: '#fbbf24',
+          brightBlue: '#60a5fa',
+          brightMagenta: '#c084fc',
+          brightCyan: '#22d3ee',
+          brightWhite: '#ffffff'
+        }
+      });
+
+      fitAddon = new FitAddon.FitAddon();
+      term.loadAddon(fitAddon);
+      term.loadAddon(new WebLinksAddon.WebLinksAddon());
+
+      const targetEl = document.getElementById('xterm-target');
+      targetEl.innerHTML = '';
+      term.open(targetEl);
+      fitAddon.fit();
+
+      window.addEventListener('resize', () => {
+        if (fitAddon && ws && ws.readyState === WebSocket.OPEN) {
+          fitAddon.fit();
+          const { rows, cols } = fitAddon.proposeDimensions() || { rows: term.rows, cols: term.cols };
+          ws.send(JSON.stringify({ type: 'resize', rows, cols }));
+        }
+      });
+
+      term.onData(data => {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(data);
+        }
+      });
+    }
+
+    function connectWs(targetHostPort) {
+      if (ws) {
+        ws.close();
+      }
+
+      const statusEl = document.getElementById('session-status');
+      statusEl.textContent = `Connecting to ws://${targetHostPort}...`;
+
+      const [host, port] = targetHostPort.split(':');
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const rows = term.rows || 24;
+      const cols = term.cols || 80;
+      const wsUrl = `${protocol}//${host}:${port || 8765}/api/v1/terminal/ws?rows=${rows}&cols=${cols}`;
+
+      ws = new WebSocket(wsUrl);
+      ws.binaryType = 'arraybuffer';
+
+      ws.onopen = () => {
+        statusEl.textContent = `Connected: ${targetHostPort} (${cols}x${rows})`;
+        statusEl.style.color = 'var(--green)';
+        document.getElementById('current-host-label').textContent = `Target: ${targetHostPort}`;
+        term.focus();
+        if (fitAddon) {
+          fitAddon.fit();
+          const dims = fitAddon.proposeDimensions();
+          if (dims) {
+            ws.send(JSON.stringify({ type: 'resize', rows: dims.rows, cols: dims.cols }));
+          }
+        }
+      };
+
+      ws.onmessage = (event) => {
+        if (typeof event.data === 'string') {
+          term.write(event.data);
+        } else {
+          term.write(new Uint8Array(event.data));
+        }
+      };
+
+      ws.onclose = () => {
+        statusEl.textContent = `Disconnected from ${targetHostPort}`;
+        statusEl.style.color = 'var(--red)';
+      };
+
+      ws.onerror = (err) => {
+        statusEl.textContent = `Connection error`;
+        statusEl.style.color = 'var(--red)';
+      };
+    }
+
+    function selectHost(targetHostPort) {
+      activePeerTarget = targetHostPort;
+      document.querySelectorAll('.peer-card').forEach(el => el.classList.remove('active'));
+      const activeEl = document.getElementById(`peer-${targetHostPort.replace(/[^a-zA-Z0-9]/g, '_')}`);
+      if (activeEl) activeEl.classList.add('active');
+
+      initTerminal();
+      connectWs(targetHostPort);
+    }
+
+    function reconnectTerminal() {
+      initTerminal();
+      connectWs(activePeerTarget);
+    }
+
+    function popoutTerminal() {
+      const url = `${window.location.protocol}//${window.location.host}/terminal?target=${encodeURIComponent(activePeerTarget)}`;
+      window.open(url, `HostInclusion_${activePeerTarget}`, 'width=1000,height=650,menubar=no,toolbar=no,location=no,status=no');
+    }
+
+    async function fetchPeers() {
+      const peerListEl = document.getElementById('peer-list');
+      peerListEl.innerHTML = '<div style="padding:16px; color:var(--text-dim); font-size:0.85rem;">Scanning Tailscale peers...</div>';
+
+      try {
+        const resp = await fetch('/api/v1/peers');
+        const peers = await resp.json();
+
+        peerListEl.innerHTML = '';
+
+        if (!peers || peers.length === 0) {
+          // Fallback to local
+          peerListEl.innerHTML = `
+            <div class="peer-card active" id="peer-local" onclick="selectHost('${currentHost}:${currentPort}')">
+              <div class="peer-title">
+                <span>Local Node</span>
+                <span class="badge"><span class="dot"></span> Online</span>
+              </div>
+              <div class="peer-meta">
+                <span>${currentHost}:${currentPort}</span>
+              </div>
+            </div>
+          `;
+          return;
+        }
+
+        peers.forEach(peer => {
+          const ip = peer.tailscale_ips[0] || peer.dns_name || currentHost;
+          const target = `${ip}:${currentPort}`;
+          const isOnline = peer.online;
+          const cardId = `peer-${target.replace(/[^a-zA-Z0-9]/g, '_')}`;
+
+          const card = document.createElement('div');
+          card.className = `peer-card ${target === activePeerTarget ? 'active' : ''}`;
+          card.id = cardId;
+          card.onclick = () => selectHost(target);
+
+          let gpuHtml = '';
+          if (peer.node_info && peer.node_info.gpus && peer.node_info.gpus.length > 0) {
+            const gpu = peer.node_info.gpus[0];
+            gpuHtml = `<div class="peer-gpu">🚀 ${gpu.name} (${gpu.memory_total_mb}MB)</div>`;
+          }
+
+          card.innerHTML = `
+            <div class="peer-title">
+              <span>${peer.hostname} ${peer.is_self ? '<span style="font-size:0.7rem; color:var(--accent);">(this machine)</span>' : ''}</span>
+              <span class="badge ${isOnline ? '' : 'offline'}">
+                <span class="dot"></span> ${isOnline ? 'Online' : 'Offline'}
+              </span>
+            </div>
+            <div class="peer-meta">
+              <span>${ip} &bull; ${peer.os}</span>
+              ${peer.hostinclusion_active ? '<span style="color:var(--green); font-size:0.75rem;">✓ Daemon Running</span>' : ''}
+              ${gpuHtml}
+            </div>
+          `;
+          peerListEl.appendChild(card);
+        });
+      } catch (err) {
+        peerListEl.innerHTML = `<div style="padding:16px; color:var(--red); font-size:0.85rem;">Error discovering peers: ${err.message}</div>`;
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      // Check for ?target= in URL query for popouts
+      const params = new URLSearchParams(window.location.search);
+      const targetParam = params.get('target');
+      if (targetParam) {
+        activePeerTarget = targetParam;
+      }
+
+      initTerminal();
+      connectWs(activePeerTarget);
+      fetchPeers();
+    });
+  </script>
+</body>
+</html>

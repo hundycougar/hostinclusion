@@ -3,15 +3,19 @@
 from __future__ import annotations
 
 import json
+import os
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any, AsyncGenerator, Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel
 import uvicorn
 
 from hostinclusion.capabilities import NodeInfo, get_node_info
+from hostinclusion.discovery import list_tailscale_peers, TailscalePeer
 from hostinclusion.pty_session import PtySession, PtySessionManager
 
 manager = PtySessionManager()
@@ -56,6 +60,23 @@ class SessionResponse(BaseModel):
     rows: int
     cols: int
     is_alive: bool
+
+
+WEB_DIR = Path(__file__).parent / "web"
+INDEX_HTML = WEB_DIR / "index.html"
+
+
+@app.get("/", response_class=FileResponse)
+@app.get("/terminal", response_class=FileResponse)
+async def serve_terminal_ui():
+    if INDEX_HTML.exists():
+        return FileResponse(INDEX_HTML)
+    return HTMLResponse("<h1>HostInclusion UI not found</h1>", status_code=404)
+
+
+@app.get("/api/v1/peers", response_model=List[TailscalePeer])
+async def get_peers():
+    return list_tailscale_peers(probe_port=8765)
 
 
 @app.get("/health")

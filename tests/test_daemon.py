@@ -35,6 +35,19 @@ def test_create_and_delete_session():
     assert del_resp.json() == {"closed": True}
 
 
+def test_serve_ui():
+    resp = client.get("/")
+    assert resp.status_code == 200
+    assert "HostInclusion" in resp.text
+    assert "xterm" in resp.text
+
+
+def test_api_peers_endpoint():
+    resp = client.get("/api/v1/peers")
+    assert resp.status_code == 200
+    assert isinstance(resp.json(), list)
+
+
 def test_websocket_terminal_stream():
     with client.websocket_connect("/api/v1/terminal/ws?command=/bin/sh") as ws:
         # Send command
