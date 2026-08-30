@@ -2,6 +2,12 @@
 
 HostInclusion is a lightweight distributed host daemon running across Tailscale-connected machines to provide remote PTY terminal sessions and distributed local resource sharing (e.g. GPU AI inference offloading).
 
+## Topology & Deployment Context
+
+- **Host Environment**: Hermes runs on a hosted VPS server.
+- **Client Access**: The user connects to Hermes through the web browser dashboard and other clients over Tailscale.
+- **In-Browser Terminal**: Remote terminal sessions to any Tailscale host (e.g. CachyOS box, GPU rigs, local machines) are rendered directly inside the Hermes web dashboard browser tab, proxied via the Hermes VPS gateway for seamless in-session access.
+
 ## Running and testing
 
 ```bash
