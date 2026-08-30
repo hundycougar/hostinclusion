@@ -1,0 +1,13 @@
+{
+  "name": "hostinclusion",
+  "label": "Hosts & Terminals",
+  "description": "Remote terminal sessions and GPU resources across your Tailscale network",
+  "icon": "Terminal",
+  "version": "0.1.0",
+  "tab": {
+    "path": "/hosts",
+    "position": "after:chat"
+  },
+  "entry": "dist/index.js",
+  "api": "plugin_api.py"
+}
