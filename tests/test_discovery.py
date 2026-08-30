@@ -1,4 +1,6 @@
-from unittest.mock import patch
+from io import BytesIO
+import json
+from unittest.mock import MagicMock, patch
 from hostinclusion.discovery import list_tailscale_peers, TailscalePeer
 
 
@@ -22,14 +24,16 @@ def test_list_tailscale_peers_mock():
         },
     }
 
-    with patch("hostinclusion.discovery.get_tailscale_status", return_value=mock_status):
-        with patch("httpx.get") as mock_get:
-            mock_get.return_value.status_code = 200
-            mock_get.return_value.json.return_value = {
-                "hostname": "gpu-rig-4070",
-                "capabilities": ["terminal", "gpu_cuda"],
-            }
+    mock_resp = MagicMock()
+    mock_resp.status = 200
+    mock_resp.read.return_value = json.dumps({
+        "hostname": "gpu-rig-4070",
+        "capabilities": ["terminal", "gpu_cuda"],
+    }).encode("utf-8")
+    mock_resp.__enter__.return_value = mock_resp
 
+    with patch("hostinclusion.discovery.get_tailscale_status", return_value=mock_status):
+        with patch("urllib.request.urlopen", return_value=mock_resp):
             peers = list_tailscale_peers(probe_port=8765)
             assert len(peers) == 2
 

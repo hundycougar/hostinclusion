@@ -6,7 +6,8 @@ import json
 import shutil
 import subprocess
 from typing import Any, Dict, List, Optional
-import httpx
+import urllib.error
+import urllib.request
 
 try:
     from pydantic import BaseModel, Field  # type: ignore
@@ -110,10 +111,11 @@ def list_tailscale_peers(probe_port: Optional[int] = 8765) -> List[TailscalePeer
                 continue
             url = f"http://{target_ip}:{probe_port}/api/v1/info"
             try:
-                resp = httpx.get(url, timeout=0.8)
-                if resp.status_code == 200:
-                    peer.hostinclusion_active = True
-                    peer.node_info = resp.json()
+                req = urllib.request.Request(url, headers={"User-Agent": "HostInclusion-Probe/0.1"})
+                with urllib.request.urlopen(req, timeout=0.8) as resp:
+                    if resp.status == 200:
+                        peer.hostinclusion_active = True
+                        peer.node_info = json.loads(resp.read().decode("utf-8"))
             except Exception:
                 peer.hostinclusion_active = False
 
