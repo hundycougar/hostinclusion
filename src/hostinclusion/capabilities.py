@@ -7,8 +7,34 @@ import platform
 import shutil
 import socket
 import subprocess
-from typing import Any, Dict, List
-from pydantic import BaseModel, Field
+from typing import Any, Dict, List, Optional
+
+try:
+    from pydantic import BaseModel, Field  # type: ignore
+except Exception:
+    class BaseModel:  # type: ignore
+        def __init__(self, **kwargs: Any) -> None:
+            for k, v in kwargs.items():
+                setattr(self, k, v)
+
+        def model_dump(self) -> Dict[str, Any]:
+            res: Dict[str, Any] = {}
+            for k, v in self.__dict__.items():
+                if isinstance(v, list):
+                    res[k] = [x.model_dump() if hasattr(x, "model_dump") else x for x in v]
+                elif hasattr(v, "model_dump"):
+                    res[k] = v.model_dump()
+                else:
+                    res[k] = v
+            return res
+
+        def dict(self) -> Dict[str, Any]:
+            return self.model_dump()
+
+    def Field(default: Any = None, default_factory: Any = None) -> Any:  # type: ignore
+        if default_factory is not None:
+            return default_factory()
+        return default
 
 
 class GPUInfo(BaseModel):
