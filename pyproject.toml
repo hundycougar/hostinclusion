@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hostinclusion"
+version = "0.1.0"
+description = "Distributed host daemon for remote terminal sessions and resource access over Tailscale"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.110.0,<1.0.0",
+    "uvicorn[standard]>=0.28.0,<1.0.0",
+    "websockets>=12.0,<15.0",
+    "ptyprocess>=0.7.0,<1.0.0; sys_platform != 'win32'",
+    "pydantic>=2.6.0,<3.0.0",
+    "typer>=0.12.0,<1.0.0",
+    "rich>=13.7.0,<14.0.0",
+    "httpx>=0.27.0,<1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0,<9.0.0",
+    "pytest-asyncio>=0.23.0,<1.0.0",
+]
+
+[project.scripts]
+hostinclusion = "hostinclusion.cli:app"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

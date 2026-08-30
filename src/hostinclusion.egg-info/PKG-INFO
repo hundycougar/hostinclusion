@@ -1,0 +1,21 @@
+Metadata-Version: 2.4
+Name: hostinclusion
+Version: 0.1.0
+Summary: Distributed host daemon for remote terminal sessions and resource access over Tailscale
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: fastapi<1.0.0,>=0.110.0
+Requires-Dist: uvicorn[standard]<1.0.0,>=0.28.0
+Requires-Dist: websockets<15.0,>=12.0
+Requires-Dist: ptyprocess<1.0.0,>=0.7.0; sys_platform != "win32"
+Requires-Dist: pydantic<3.0.0,>=2.6.0
+Requires-Dist: typer<1.0.0,>=0.12.0
+Requires-Dist: rich<14.0.0,>=13.7.0
+Requires-Dist: httpx<1.0.0,>=0.27.0
+Provides-Extra: dev
+Requires-Dist: pytest<9.0.0,>=8.0.0; extra == "dev"
+Requires-Dist: pytest-asyncio<1.0.0,>=0.23.0; extra == "dev"
+
+# HostInclusion
+
+See AGENTS.md for how to run, test, and work on this.

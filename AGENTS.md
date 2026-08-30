@@ -1,22 +1,30 @@
 # HostInclusion
 
-<!-- What this is, in one or two lines. Replace this. -->
+HostInclusion is a lightweight distributed host daemon running across Tailscale-connected machines to provide remote PTY terminal sessions and distributed local resource sharing (e.g. GPU AI inference offloading).
 
 ## Running and testing
 
-<!-- The exact commands. An agent that cannot run the tests cannot verify its
-     own work, and will confidently tell you it is done. -->
-
 ```bash
-# install:
-# test:
-# run:
+# install dependencies
+uv venv
+uv pip install -e ".[dev]"
+
+# run tests
+uv run pytest
+
+# run the host inclusion daemon locally
+uv run python -m hostinclusion.daemon
 ```
 
 ## Decisions that must not change silently
 
-<!-- Language, framework, datastore, anything with a reason behind it.
-     If it is not written here, an agent will treat it as negotiable. -->
+- **Runtime & Language**: Python 3.11+ managed with `uv` for seamless PyTorch / CUDA / vLLM compatibility on GPU nodes.
+- **Networking & Transport**: Tailscale mesh for node discovery, secure transport, and peer authentication.
+- **Terminal Sessions**: PTY allocation via `ptyprocess` (Linux/macOS) / `pywinpty` (Windows) streamed over WebSocket endpoints via FastAPI.
+- **Architecture**:
+  - `hostinclusion.daemon`: Daemon service running on each node exposing status and WebSocket PTY sessions.
+  - `hostinclusion.cli`: CLI to list connected nodes and connect to remote terminal sessions.
+  - Pluggable capability modules: `terminal` (MVP), extensible to `gpu_worker` / `inference` (e.g. RTX 4070 offload).
 
 ## Knowledge pointers
 

@@ -1,0 +1,10 @@
+README.md
+pyproject.toml
+src/hostinclusion/__init__.py
+src/hostinclusion.egg-info/PKG-INFO
+src/hostinclusion.egg-info/SOURCES.txt
+src/hostinclusion.egg-info/dependency_links.txt
+src/hostinclusion.egg-info/entry_points.txt
+src/hostinclusion.egg-info/requires.txt
+src/hostinclusion.egg-info/top_level.txt
+tests/test_basic.py
